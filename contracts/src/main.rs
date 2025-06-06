@@ -114,9 +114,7 @@ pub struct RemoveUser<'info> {
     pub whitelist: Account<'info, Whitelist>,
     
     #[account(mut)]
-    pub authority: Signer<'info>,
-
-    
+    pub authority: Signer<'info>,    
     pub system_program: Program<'info, System>,
 }
 
@@ -144,6 +142,8 @@ pub struct Whitelist {
     pub users: Vec<Pubkey>,
     pub is_initialized: bool,
     pub authority: Pubkey,
+    pub messages: Vec<String>,
+    
 }
 
 
