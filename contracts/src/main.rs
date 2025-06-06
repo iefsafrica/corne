@@ -15,7 +15,7 @@ pub mod whitelist {
         Ok(())
     }
 
-    // This fucntion deals with adding users to the contract
+    // This function deals with adding users to the contract
     // users that can send messages
     pub fn add_user_to_whitelist(
         ctx: Context<AddUser>,
@@ -28,8 +28,8 @@ pub mod whitelist {
         // Checking if the user already exists in the whitelist
         let whitelist = &mut ctx.accounts.whitelist;
 
-        // Checking if the user is already in the whitelist
-        require!(whitelist.users.contains(user), ErrorCode::UserAlreadyInWhitelist);
+        // Checking if the user is NOT already in the whitelist
+        require!(!whitelist.users.contains(&user), ErrorCode::UserAlreadyInWhitelist);
 
         // Add the user to the whitelist
         whitelist.add_user(user);
@@ -46,6 +46,8 @@ pub mod whitelist {
         require!(whitelist.is_initialized, ErrorCode::NotInitialized);
         require!(whitelist.authority == ctx.accounts.authority.key(), ErrorCode::Unauthorized);
         
+        // Check if user is in whitelist before removing
+        require!(whitelist.users.contains(&user), ErrorCode::UserNotInWhitelist);
 
         // Remove the whitelisted user
         whitelist.remove_user(user);
@@ -53,7 +55,7 @@ pub mod whitelist {
         Ok(())
     }
 
-    pub fn send_message(ctx: Context<SendMessage>, message: String) -> Result<(bool)> {
+    pub fn send_message(ctx: Context<SendMessage>, message: String) -> Result<bool> {
         let whitelist = &mut ctx.accounts.whitelist;
         require!(whitelist.is_initialized, ErrorCode::NotInitialized);
         require!(whitelist.users.contains(&ctx.accounts.authority.key()), ErrorCode::Unauthorized);
@@ -65,10 +67,9 @@ pub mod whitelist {
     }
 
     pub fn view_whitelist(ctx: Context<ViewWhitelist>) -> Result<()> {
-
         // Anybody should be able to view the whitelist so they can see if they are able to send messages
         require!(ctx.accounts.platform_config.is_initialized, ErrorCode::NotInitialized);
-        let whitelist = &ctx.accounts.whitelist;
+        let _whitelist = &ctx.accounts.whitelist;
         Ok(())
     }
 
@@ -79,13 +80,12 @@ pub mod whitelist {
     }
 }
 
-
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(
         init,
         payer = authority,
-        space = 8 + 32 + 1 + 1,
+        space = 8 + 32 + 1 + 32, // discriminator + authority + is_initialized + whitelist pubkey
         seeds = [b"platform_config".as_ref()],
         bump
     )]
@@ -99,9 +99,19 @@ pub struct Initialize<'info> {
 #[derive(Accounts)]
 pub struct AddUser<'info> {
     #[account(
-        init,
+        seeds = [b"platform_config".as_ref()],
         bump
     )]
+    pub platform_config: Account<'info, PlatformConfig>,
+    
+    #[account(
+        init,
+        payer = authority,
+        space = 8 + 4 + (32 * 100) + 1 + 32 + 4 + (4 + 200) * 50, // discriminator + users vec + is_initialized + authority + messages vec
+        seeds = [b"whitelist".as_ref()],
+        bump
+    )]
+    pub whitelist: Account<'info, Whitelist>,
     
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -124,11 +134,38 @@ pub struct SendMessage<'info> {
     pub whitelist: Account<'info, Whitelist>,
     
     pub authority: Signer<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
+#[derive(Accounts)]
+pub struct ViewWhitelist<'info> {
+    #[account(
+        seeds = [b"platform_config".as_ref()],
+        bump
+    )]
+    pub platform_config: Account<'info, PlatformConfig>,
+    
+    #[account(
+        seeds = [b"whitelist".as_ref()],
+        bump
+    )]
+    pub whitelist: Account<'info, Whitelist>,
+}
 
+#[derive(Accounts)]
+pub struct IsUserInWhitelist<'info> {
+    #[account(
+        seeds = [b"platform_config".as_ref()],
+        bump
+    )]
+    pub platform_config: Account<'info, PlatformConfig>,
+    
+    #[account(
+        seeds = [b"whitelist".as_ref()],
+        bump
+    )]
+    pub whitelist: Account<'info, Whitelist>,
+}
 
 #[account]
 pub struct PlatformConfig {
@@ -143,10 +180,24 @@ pub struct Whitelist {
     pub is_initialized: bool,
     pub authority: Pubkey,
     pub messages: Vec<String>,
-    
 }
 
-
+impl Whitelist {
+    pub fn add_user(&mut self, user: Pubkey) {
+        self.users.push(user);
+        if !self.is_initialized {
+            self.is_initialized = true;
+        }
+    }
+    
+    pub fn remove_user(&mut self, user: Pubkey) {
+        self.users.retain(|&x| x != user);
+    }
+    
+    pub fn send_message(&mut self, message: String) {
+        self.messages.push(message);
+    }
+}
 
 #[error_code]
 pub enum ErrorCode {
@@ -161,6 +212,4 @@ pub enum ErrorCode {
     
     #[msg("User not in whitelist")]
     UserNotInWhitelist,
-
-
 }
