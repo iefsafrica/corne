@@ -39,7 +39,6 @@ const updateTasks = (req, res) => {
   res.status(201).json({meassage: 'Task updated successfully', tasks})
 }
 
-//Unable to complete my time is up
 const deleteTask = (req, res) => {
   const index = tasks.findIndex(t => t.id === parseInt(req.params.id));
 
