@@ -40,12 +40,15 @@ const updateTasks = (req, res) => {
 }
 
 //Unable to complete my time is up
-// const deleteTask = (req, res) => {
-//   const index = tasks.findIndex(t => t.id === parseInt(req.params.id));
+const deleteTask = (req, res) => {
+  const index = tasks.findIndex(t => t.id === parseInt(req.params.id));
 
-//   if(index === -1 )
-// }
+  if (index === -1) res.status(404).json({ error: "TAsk not found" });
+
+  tasks.splice(index, 1);
+  res.json({ message: 'Task deleted successfully!'})
+}
 
 module.exports = {
-  createTask, getAllTasks, getTaskById, updateTasks
+  createTask, getAllTasks, getTaskById, updateTasks, deleteTask
 }
