@@ -29,6 +29,41 @@ export const postTask = async (req: Request, res: Response): Promise<void> => {
   res.status(201).json(task);
 };
 
+// Update a Task
+export const updateTask = (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const { name, description, budget } = req.body;
+
+  const task = mockTasks.find((t) => t.id === id);
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  if (name !== undefined) task.name = name;
+  if (description !== undefined) task.description = description;
+  if (budget !== undefined) task.budget = Number(budget);
+
+  res.status(200).json({ message: "Task updated successfully", task });
+};
+
+// Find by id
+export const getTaskById = (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  const task = mockTasks.find((t) => t.id === id);
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  res.status(200).json(task);
+};
+
+// Find by ids
+
 // Delete a Task
 export const deleteTask = (req: Request, res: Response): void => {
   const { id } = req.params;
