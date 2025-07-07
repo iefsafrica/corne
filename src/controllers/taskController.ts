@@ -29,6 +29,23 @@ export const postTask = async (req: Request, res: Response): Promise<void> => {
   res.status(201).json(task);
 };
 
+// Delete a Task
+export const deleteTask = (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  const taskIndex = mockTasks.findIndex((task) => task.id === id);
+
+  if (taskIndex === -1) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  mockTasks.splice(taskIndex, 1);
+
+  res.status(200).json({ message: "Task deleted successfully" });
+};
+
+
 // List tasks that aren't claimed
 export const listAvailableTasks = async (_req: Request, res: Response): Promise<void> => {
   const available = mockTasks.filter((task) => task.claimedBy === null);
