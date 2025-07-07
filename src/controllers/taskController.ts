@@ -1,0 +1,130 @@
+import { Request, Response } from "express";
+
+interface Task {
+  id: string;
+  name: string;
+  description: string;
+  budget: number;
+  claimedBy: string | null;
+}
+
+let mockTasks: Task[] = []; // Local memory
+
+
+let taskIdCounter = 1;
+
+// Post new task
+export const postTask = async (req: Request, res: Response): Promise<void> => {
+  const { name, description, budget } = req.body;
+
+  const task: Task = {
+    id: String(taskIdCounter++),
+    name,
+    description,
+    budget: Number(budget),
+    claimedBy: null,
+  };
+
+  mockTasks.push(task);
+  res.status(201).json(task);
+};
+
+// Update a Task
+export const updateTask = (req: Request, res: Response): void => {
+  const { id } = req.params;
+  const { name, description, budget } = req.body;
+
+  const task = mockTasks.find((t) => t.id === id);
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  if (name !== undefined) task.name = name;
+  if (description !== undefined) task.description = description;
+  if (budget !== undefined) task.budget = Number(budget);
+
+  res.status(200).json({ message: "Task updated successfully", task });
+};
+
+// Find by id
+export const getTaskById = (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  const task = mockTasks.find((t) => t.id === id);
+
+  if (!task) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  res.status(200).json(task);
+};
+
+// Find by ids
+export const getAllTasks = (req: Request, res: Response): void => {
+  res.status(200).json(mockTasks);
+};
+
+// Delete a Task
+export const deleteTask = (req: Request, res: Response): void => {
+  const { id } = req.params;
+
+  const taskIndex = mockTasks.findIndex((task) => task.id === id);
+
+  if (taskIndex === -1) {
+    res.status(404).json({ message: "Task not found" });
+    return;
+  }
+
+  mockTasks.splice(taskIndex, 1);
+
+  res.status(200).json({ message: "Task deleted successfully" });
+};
+
+
+// List tasks that aren't claimed
+export const listAvailableTasks = async (_req: Request, res: Response): Promise<void> => {
+  const available = mockTasks.filter((task) => task.claimedBy === null);
+  res.json(available);
+};
+
+// Claim a task
+export const claimTask = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = (req as any).user?.id;
+
+  const task = mockTasks.find((t) => t.id === id && t.claimedBy === null);
+
+  if (!task) {
+    res.status(400).json({ message: "Task already claimed or does not exist" });
+    return;
+  }
+
+  task.claimedBy = userId;
+  res.json(task);
+};
+
+// View your claimed tasks
+export const myTasks = async (req: Request, res: Response): Promise<void> => {
+  const userId = (req as any).user?.id;
+  const claimed = mockTasks.filter((t) => t.claimedBy === userId);
+  res.json(claimed);
+};
+
+// Unclaim a task
+export const unclaimTask = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params;
+  const userId = (req as any).user?.id;
+
+  const task = mockTasks.find((t) => t.id === id);
+
+  if (!task || task.claimedBy !== userId) {
+    res.status(403).json({ message: "Not authorized to unclaim this task" });
+    return;
+  }
+
+  task.claimedBy = null;
+  res.json(task);
+};
