@@ -63,6 +63,9 @@ export const getTaskById = (req: Request, res: Response): void => {
 };
 
 // Find by ids
+export const getAllTasks = (req: Request, res: Response): void => {
+  res.status(200).json(mockTasks);
+};
 
 // Delete a Task
 export const deleteTask = (req: Request, res: Response): void => {
