@@ -1,18 +1,27 @@
-const {app} = require('./server');
-const getConnection = require('../config/db/connection');
+require('dotenv').config();
 
-const startServer = async() => {
-    try{
-        const message =  await getConnection();
-        server.listen(port || 3000, () => {});
+const { app } = require('./server');
+const {getConnection} = require('../config/db/connection');
 
-        app.on('error', (err) => {
-            process.exit(1);
-        });
+const PORT = require('../config/env/variables')
 
-    } catch(error) {
-        process.exit(1);
-    }
-}
+const startServer = async () => {
+  try {
+    const message = await getConnection();
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+
+    app.on('error', (err) => {
+      console.error('Server error:', err);
+      process.exit(1);
+    });
+
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
 
 startServer();

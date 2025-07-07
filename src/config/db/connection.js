@@ -43,3 +43,5 @@ const getConnection = async () => {
         throw error;
     }
 }
+
+module.exports = { getConnection };

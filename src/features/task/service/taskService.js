@@ -1,5 +1,3 @@
-const { get } = require("http");
-
 
 const { get } = require("http");
 
@@ -92,6 +90,13 @@ const taskService = (getTaskModel) => {
             return { status: 500, message: 'Internal Server Error', error: error.message };
         }
     };  
+
+    return {
+        createTask,
+        deleteTask,
+        updateTask,
+        getAllTask
+    };
 
 };
 
